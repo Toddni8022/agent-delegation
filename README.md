@@ -446,6 +446,7 @@ See the `examples/` directory for complete working examples:
 - `trump_fact_checker.py` - Interactive next-word prediction + fact-check flags
 - `fact_check_transcript.py` - One-command transcript fact-check report
 - `fact_check_gui.py` - Desktop GUI (browse transcript, analyze, save report)
+- `build_gui_exe.py` - Build a Windows .exe for the GUI with PyInstaller
 
 Run examples:
 
@@ -454,6 +455,25 @@ python examples/basic_usage.py
 python examples/trump_fact_checker.py
 python examples/fact_check_transcript.py --transcript examples/data/trump_sample_transcript.txt
 python examples/fact_check_gui.py
+python examples/build_gui_exe.py
+```
+
+### Build Windows .exe for GUI
+
+```bash
+# Install builder dependency once
+python -m pip install pyinstaller
+
+# Build dist/TrumpFactCheckerGUI.exe
+python examples/build_gui_exe.py
+```
+
+Optional flags:
+
+```bash
+python examples/build_gui_exe.py --name MyFactChecker
+python examples/build_gui_exe.py --name MyFactChecker --icon path/to/icon.ico
+python examples/build_gui_exe.py --no-onefile
 ```
 
 ## Architecture Details
