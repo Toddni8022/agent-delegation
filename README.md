@@ -444,12 +444,14 @@ See the `examples/` directory for complete working examples:
 - `basic_usage.py` - Basic task delegation
 - More examples demonstrating callbacks, multiple agents, priority queue, etc.
 - `trump_fact_checker.py` - Interactive next-word prediction + fact-check flags
+- `fact_check_transcript.py` - One-command transcript fact-check report
 
 Run examples:
 
 ```bash
 python examples/basic_usage.py
 python examples/trump_fact_checker.py
+python examples/fact_check_transcript.py --input examples/data/trump_sample_transcript.txt
 ```
 
 ## Architecture Details

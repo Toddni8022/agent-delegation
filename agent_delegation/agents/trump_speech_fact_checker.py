@@ -90,7 +90,7 @@ class TrumpSpeechFactCheckAgent(Agent):
             top_k = int(task.params.get("top_k", 5))
             return self.predict_next_words(prompt=prompt, top_k=top_k)
         if operation == "fact_check":
-            text = task.params.get("text", "")
+            text = self._load_fact_check_text(task.params)
             return self.fact_check_text(text=text)
         if operation == "analyze_live_line":
             prompt = task.params.get("prompt", "")
@@ -101,6 +101,31 @@ class TrumpSpeechFactCheckAgent(Agent):
                 "fact_check": self.fact_check_text(text=text),
             }
         raise ValueError(f"Unknown operation: {operation}")
+
+    def _load_fact_check_text(self, params: Dict[str, Any]) -> str:
+        """Load fact-check text from inline fields and/or file paths."""
+        text = params.get("text")
+        if isinstance(text, str) and text.strip():
+            return text
+
+        combined_texts: List[str] = []
+        raw_texts = params.get("texts", [])
+        if isinstance(raw_texts, list):
+            combined_texts.extend(str(item) for item in raw_texts if str(item).strip())
+
+        transcript_path = params.get("transcript_path")
+        if transcript_path:
+            combined_texts.append(Path(transcript_path).read_text(encoding="utf-8"))
+
+        transcript_paths = params.get("transcript_paths", [])
+        if isinstance(transcript_paths, list):
+            for raw_path in transcript_paths:
+                combined_texts.append(Path(raw_path).read_text(encoding="utf-8"))
+
+        joined_text = "\n".join(segment for segment in combined_texts if segment.strip()).strip()
+        if joined_text:
+            return joined_text
+        raise ValueError("No text provided for fact-checking")
 
     def _load_transcripts(self, params: Dict[str, Any]) -> List[str]:
         """Load transcript input from inline text and/or file paths."""

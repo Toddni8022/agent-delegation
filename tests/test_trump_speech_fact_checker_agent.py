@@ -100,3 +100,28 @@ async def test_analyze_live_line_combines_outputs():
     assert "fact_check" in result
     assert isinstance(result["predictions"]["predictions"], list)
     assert isinstance(result["fact_check"]["checks"], list)
+
+
+@pytest.mark.asyncio
+async def test_fact_check_from_transcript_path(tmp_path):
+    """Fact-check operation can read transcript text from file path."""
+    transcript = tmp_path / "speech.txt"
+    transcript.write_text(
+        "The election was stolen. "
+        "Mexico paid for the wall. "
+        "We had 10 million people at a rally.",
+        encoding="utf-8",
+    )
+
+    agent = TrumpSpeechFactCheckAgent()
+    result = await agent.execute(
+        Task(
+            task_type="trump_fact_check",
+            params={"operation": "fact_check", "transcript_path": str(transcript)},
+        )
+    )
+
+    assert result["checks_count"] == 3
+    verdicts = [item["verdict"] for item in result["checks"]]
+    assert "unsupported" in verdicts
+    assert "needs_review" in verdicts
