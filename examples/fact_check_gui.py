@@ -10,6 +10,7 @@ import asyncio
 import csv
 import json
 from pathlib import Path
+import sys
 from typing import Any
 
 try:
@@ -20,6 +21,11 @@ except ModuleNotFoundError:  # pragma: no cover - depends on host OS packages
     filedialog = None
     messagebox = None
     ttk = None
+
+# Ensure local package imports work when launched as `python examples/...`.
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from agent_delegation import Task
 from agent_delegation.agents import TrumpSpeechFactCheckAgent
