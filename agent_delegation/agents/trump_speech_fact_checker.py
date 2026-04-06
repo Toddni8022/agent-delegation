@@ -102,6 +102,28 @@ class TrumpSpeechFactCheckAgent(Agent):
             }
         raise ValueError(f"Unknown operation: {operation}")
 
+    def _read_pdf_text(self, file_path: Path) -> str:
+        """Extract text from a PDF file."""
+        try:
+            import pypdf
+        except ModuleNotFoundError as exc:  # pragma: no cover - env specific
+            raise RuntimeError(
+                "PDF support requires 'pypdf'. Install it with: python -m pip install pypdf"
+            ) from exc
+
+        reader = pypdf.PdfReader(str(file_path))
+        page_text = [(page.extract_text() or "").strip() for page in reader.pages]
+        text = "\n".join(chunk for chunk in page_text if chunk).strip()
+        if not text:
+            raise ValueError(f"No extractable text found in PDF: {file_path}")
+        return text
+
+    def _read_text_from_path(self, file_path: Path) -> str:
+        """Read transcript text from txt or pdf paths."""
+        if file_path.suffix.lower() == ".pdf":
+            return self._read_pdf_text(file_path)
+        return file_path.read_text(encoding="utf-8")
+
     def _load_fact_check_text(self, params: Dict[str, Any]) -> str:
         """Load fact-check text from inline fields and/or file paths."""
         text = params.get("text")
@@ -115,12 +137,12 @@ class TrumpSpeechFactCheckAgent(Agent):
 
         transcript_path = params.get("transcript_path")
         if transcript_path:
-            combined_texts.append(Path(transcript_path).read_text(encoding="utf-8"))
+            combined_texts.append(self._read_text_from_path(Path(transcript_path)))
 
         transcript_paths = params.get("transcript_paths", [])
         if isinstance(transcript_paths, list):
             for raw_path in transcript_paths:
-                combined_texts.append(Path(raw_path).read_text(encoding="utf-8"))
+                combined_texts.append(self._read_text_from_path(Path(raw_path)))
 
         joined_text = "\n".join(segment for segment in combined_texts if segment.strip()).strip()
         if joined_text:
@@ -139,13 +161,13 @@ class TrumpSpeechFactCheckAgent(Agent):
 
         transcript_path = params.get("transcript_path")
         if transcript_path:
-            file_text = Path(transcript_path).read_text(encoding="utf-8")
+            file_text = self._read_text_from_path(Path(transcript_path))
             transcripts.append(file_text)
 
         transcript_paths = params.get("transcript_paths", [])
         if isinstance(transcript_paths, list):
             for raw_path in transcript_paths:
-                file_text = Path(raw_path).read_text(encoding="utf-8")
+                file_text = self._read_text_from_path(Path(raw_path))
                 transcripts.append(file_text)
 
         if not transcripts:

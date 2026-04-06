@@ -107,7 +107,7 @@ class FactCheckApp:
 
         subtitle = ttk.Label(
             main,
-            text="Select a transcript .txt file and click Analyze.",
+            text="Select a transcript (.txt or .pdf) and click Analyze.",
         )
         subtitle.pack(anchor="w", pady=(0, 10))
 
@@ -165,7 +165,12 @@ class FactCheckApp:
     def browse_file(self) -> None:
         selected = filedialog.askopenfilename(
             title="Select Transcript File",
-            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+            filetypes=[
+                ("Transcript files", "*.txt *.pdf"),
+                ("Text files", "*.txt"),
+                ("PDF files", "*.pdf"),
+                ("All files", "*.*"),
+            ],
         )
         if selected:
             self.path_var.set(selected)

@@ -2,6 +2,7 @@
 
 Usage:
     python examples/fact_check_transcript.py --transcript path/to/speech.txt
+    python examples/fact_check_transcript.py --transcript path/to/speech.pdf
 """
 
 from __future__ import annotations
@@ -27,7 +28,7 @@ async def main() -> None:
     parser.add_argument(
         "--transcript",
         required=True,
-        help="Path to transcript text file.",
+        help="Path to transcript file (.txt or .pdf).",
     )
     parser.add_argument(
         "--output",

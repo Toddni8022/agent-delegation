@@ -90,6 +90,7 @@ def main() -> None:
             "agent_delegation",
             "agent_delegation.agents",
             "agent_delegation.core",
+            "pypdf",
         ],
     )
 

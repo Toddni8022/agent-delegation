@@ -1,5 +1,6 @@
 """Tests for TrumpSpeechFactCheckAgent."""
 
+from pathlib import Path
 import pytest
 
 from agent_delegation.agents import TrumpSpeechFactCheckAgent
@@ -125,3 +126,37 @@ async def test_fact_check_from_transcript_path(tmp_path):
     verdicts = [item["verdict"] for item in result["checks"]]
     assert "unsupported" in verdicts
     assert "needs_review" in verdicts
+
+
+def test_read_text_from_pdf_path_uses_pdf_reader(monkeypatch):
+    """PDF paths should route through the PDF extraction helper."""
+    agent = TrumpSpeechFactCheckAgent()
+    expected = "The election was stolen."
+
+    def fake_pdf_reader(path: Path) -> str:
+        assert path.suffix.lower() == ".pdf"
+        return expected
+
+    monkeypatch.setattr(agent, "_read_pdf_text", fake_pdf_reader)
+    result = agent._read_text_from_path(Path("speech.pdf"))
+    assert result == expected
+
+
+@pytest.mark.asyncio
+async def test_fact_check_from_pdf_path(monkeypatch):
+    """Fact check operation should support transcript_path PDF files."""
+    agent = TrumpSpeechFactCheckAgent()
+
+    def fake_pdf_reader(path: Path) -> str:
+        assert path.suffix.lower() == ".pdf"
+        return "The largest inauguration crowd was mine."
+
+    monkeypatch.setattr(agent, "_read_pdf_text", fake_pdf_reader)
+    result = await agent.execute(
+        Task(
+            task_type="trump_fact_check",
+            params={"operation": "fact_check", "transcript_path": "speech.pdf"},
+        )
+    )
+    assert result["checks_count"] == 1
+    assert result["checks"][0]["verdict"] == "unsupported"

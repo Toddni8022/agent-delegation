@@ -444,8 +444,8 @@ See the `examples/` directory for complete working examples:
 - `basic_usage.py` - Basic task delegation
 - More examples demonstrating callbacks, multiple agents, priority queue, etc.
 - `trump_fact_checker.py` - Interactive next-word prediction + fact-check flags
-- `fact_check_transcript.py` - One-command transcript fact-check report
-- `fact_check_gui.py` - Desktop GUI (browse transcript, analyze, save report)
+- `fact_check_transcript.py` - One-command transcript fact-check report (.txt or .pdf)
+- `fact_check_gui.py` - Desktop GUI (browse transcript .txt/.pdf, analyze, save report)
 - `build_gui_exe.py` - Build a Windows .exe for the GUI with PyInstaller
 
 Run examples:
@@ -463,6 +463,7 @@ python examples/build_gui_exe.py
 ```bash
 # Install builder dependency once
 python -m pip install pyinstaller
+python -m pip install pypdf
 
 # Build dist/TrumpFactCheckerGUI.exe
 python examples/build_gui_exe.py
