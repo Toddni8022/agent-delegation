@@ -25,6 +25,8 @@ def build_pyinstaller_command(
     onefile: bool = True,
     windowed: bool = True,
     icon_path: Optional[Path] = None,
+    search_path: Optional[Path] = None,
+    hidden_imports: Optional[List[str]] = None,
 ) -> List[str]:
     """Create the pyinstaller command for building the GUI executable."""
     command = ["pyinstaller"]
@@ -32,6 +34,10 @@ def build_pyinstaller_command(
         command.append("--onefile")
     if windowed:
         command.append("--windowed")
+    if search_path:
+        command.extend(["--paths", str(search_path)])
+    for module_name in hidden_imports or []:
+        command.extend(["--hidden-import", module_name])
     command.extend(["--name", app_name, str(script_path)])
     if icon_path:
         command.extend(["--icon", str(icon_path)])
@@ -79,6 +85,12 @@ def main() -> None:
         onefile=not args.no_onefile,
         windowed=True,
         icon_path=icon_path,
+        search_path=repo_root,
+        hidden_imports=[
+            "agent_delegation",
+            "agent_delegation.agents",
+            "agent_delegation.core",
+        ],
     )
 
     print("Running build command:")
