@@ -425,6 +425,19 @@ fiber-run-estimator \
   --to-cabinet B-22 \
   --route-height-ft 10 \
   --turns 3
+
+# Fiber run estimate using dcTrack API JSON
+fiber-run-estimator \
+  --dctrack-api-url https://dctrack.example.com/api/cabinets \
+  --from-cabinet A-14 \
+  --to-cabinet B-22 \
+  --dctrack-token-env DCTRACK_API_TOKEN \
+  --dctrack-data-path data.items \
+  --field-cabinet-id name \
+  --field-x x \
+  --field-y y \
+  --field-elevation z \
+  --field-entry-height entry
 ```
 
 ## Architecture Details

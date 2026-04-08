@@ -7,6 +7,7 @@ import pytest
 from agent_delegation.tools.fiber_run_estimator import (
     CabinetLocation,
     calculate_fiber_run,
+    load_cabinet_locations_from_dctrack_api,
     load_cabinet_locations,
 )
 
@@ -120,3 +121,49 @@ def test_load_cabinet_locations_rejects_bad_extension(tmp_path):
 
     with pytest.raises(ValueError, match="must be .csv or .json"):
         load_cabinet_locations(input_file)
+
+
+def test_load_cabinet_locations_from_dctrack_api(monkeypatch):
+    """Should parse dcTrack-style API JSON and map field names."""
+    payload = {
+        "data": {
+            "items": [
+                {"name": "A-14", "x": 10, "y": 20, "z": 0, "entry": 2},
+                {"name": "B-22", "x": 160, "y": 170, "z": 0, "entry": 2},
+            ]
+        }
+    }
+
+    class _DummyResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def read(self):
+            return json.dumps(payload).encode("utf-8")
+
+    def _fake_urlopen(_req, timeout):
+        assert timeout == pytest.approx(15.0)
+        return _DummyResponse()
+
+    monkeypatch.setattr(
+        "agent_delegation.tools.fiber_run_estimator.urllib_request.urlopen",
+        _fake_urlopen,
+    )
+
+    cabinets = load_cabinet_locations_from_dctrack_api(
+        "https://dctrack.local/api/cabinets",
+        token="secret",
+        timeout_sec=15.0,
+        data_path="data.items",
+        field_cabinet_id="name",
+        field_x="x",
+        field_y="y",
+        field_elevation="z",
+        field_entry_height="entry",
+    )
+
+    assert cabinets["A-14"].x_ft == pytest.approx(10.0)
+    assert cabinets["B-22"].y_ft == pytest.approx(170.0)

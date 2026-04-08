@@ -8,6 +8,7 @@ __all__ = (
     "CabinetLocation",
     "FiberRunEstimate",
     "calculate_fiber_run",
+    "load_cabinet_locations_from_dctrack_api",
     "load_cabinet_locations",
 )
 

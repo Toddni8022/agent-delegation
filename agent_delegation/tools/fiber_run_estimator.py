@@ -6,9 +6,11 @@ import argparse
 import csv
 import json
 import math
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib import request as urllib_request
 
 
 @dataclass(frozen=True)
@@ -132,6 +134,87 @@ def load_cabinet_locations(path: str | Path) -> dict[str, CabinetLocation]:
     raise ValueError("Cabinet file must be .csv or .json")
 
 
+def _get_nested_value(payload: Any, path: str) -> Any:
+    """Resolve nested object path such as 'data.items'."""
+    if not path:
+        return payload
+    current = payload
+    for part in path.split("."):
+        if isinstance(current, dict) and part in current:
+            current = current[part]
+            continue
+        raise ValueError(f"Could not resolve dctrack-data-path segment: {part!r}")
+    return current
+
+
+def load_cabinet_locations_from_dctrack_api(
+    api_url: str,
+    *,
+    token: str | None = None,
+    timeout_sec: float = 20.0,
+    auth_header: str = "Authorization",
+    auth_prefix: str = "Bearer",
+    data_path: str = "",
+    field_cabinet_id: str = "cabinet_id",
+    field_x: str = "x_ft",
+    field_y: str = "y_ft",
+    field_elevation: str = "elevation_ft",
+    field_entry_height: str = "entry_height_ft",
+) -> dict[str, CabinetLocation]:
+    """Load cabinet locations from a dcTrack-compatible JSON API endpoint."""
+    headers = {"Accept": "application/json"}
+    if token:
+        header_value = token if not auth_prefix else f"{auth_prefix} {token}"
+        headers[auth_header] = header_value
+
+    req = urllib_request.Request(api_url, headers=headers, method="GET")
+    with urllib_request.urlopen(req, timeout=timeout_sec) as response:
+        raw_body = response.read().decode("utf-8")
+    payload = json.loads(raw_body)
+    payload = _get_nested_value(payload, data_path.strip())
+
+    cabinets: dict[str, CabinetLocation] = {}
+    records: list[dict[str, Any]]
+    if isinstance(payload, list):
+        records = payload
+    elif isinstance(payload, dict):
+        # Support both keyed maps and one-record payloads.
+        if all(isinstance(value, dict) for value in payload.values()):
+            records = []
+            for key, value in payload.items():
+                record = dict(value)
+                record.setdefault(field_cabinet_id, key)
+                records.append(record)
+        else:
+            records = [payload]
+    else:
+        raise ValueError("dcTrack API response must be a JSON object or list.")
+
+    for record in records:
+        if not isinstance(record, dict):
+            raise ValueError("dcTrack API records must be JSON objects.")
+
+        cabinet_id = str(record.get(field_cabinet_id, "")).strip()
+        if not cabinet_id:
+            raise ValueError(
+                f"dcTrack API record missing cabinet ID field '{field_cabinet_id}'."
+            )
+        if cabinet_id in cabinets:
+            raise ValueError(f"Duplicate cabinet_id found: {cabinet_id}")
+
+        mapped = {
+            "x_ft": record.get(field_x),
+            "y_ft": record.get(field_y),
+            "elevation_ft": record.get(field_elevation, 0.0),
+            "entry_height_ft": record.get(field_entry_height, 0.0),
+        }
+        cabinets[cabinet_id] = _cabinet_from_mapping(cabinet_id, mapped)
+
+    if not cabinets:
+        raise ValueError("dcTrack API returned no cabinet records.")
+    return cabinets
+
+
 def calculate_fiber_run(
     cabinets: dict[str, CabinetLocation],
     from_cabinet: str,
@@ -226,9 +309,72 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Estimate fiber run length between two data center cabinets."
     )
-    parser.add_argument("--cabinet-file", required=True, help="Path to .csv or .json cabinet file.")
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument(
+        "--cabinet-file", help="Path to .csv or .json cabinet file."
+    )
+    source.add_argument(
+        "--dctrack-api-url",
+        help="dcTrack API endpoint that returns cabinet coordinate JSON.",
+    )
     parser.add_argument("--from-cabinet", required=True, help="Source cabinet identifier.")
     parser.add_argument("--to-cabinet", required=True, help="Destination cabinet identifier.")
+    parser.add_argument(
+        "--dctrack-api-token",
+        default=None,
+        help="API token for dcTrack requests. If omitted, uses --dctrack-token-env.",
+    )
+    parser.add_argument(
+        "--dctrack-token-env",
+        default="DCTRACK_API_TOKEN",
+        help="Environment variable name for dcTrack token.",
+    )
+    parser.add_argument(
+        "--dctrack-auth-header",
+        default="Authorization",
+        help="Auth header name for dcTrack API requests.",
+    )
+    parser.add_argument(
+        "--dctrack-auth-prefix",
+        default="Bearer",
+        help="Prefix before token value in auth header. Use empty string for raw token.",
+    )
+    parser.add_argument(
+        "--dctrack-timeout-sec",
+        type=float,
+        default=20.0,
+        help="HTTP timeout for dcTrack API requests.",
+    )
+    parser.add_argument(
+        "--dctrack-data-path",
+        default="",
+        help="Dot path to cabinet records in dcTrack JSON payload (example: data.items).",
+    )
+    parser.add_argument(
+        "--field-cabinet-id",
+        default="cabinet_id",
+        help="dcTrack JSON field containing cabinet ID.",
+    )
+    parser.add_argument(
+        "--field-x",
+        default="x_ft",
+        help="dcTrack JSON field containing X coordinate in feet.",
+    )
+    parser.add_argument(
+        "--field-y",
+        default="y_ft",
+        help="dcTrack JSON field containing Y coordinate in feet.",
+    )
+    parser.add_argument(
+        "--field-elevation",
+        default="elevation_ft",
+        help="dcTrack JSON field containing base elevation in feet.",
+    )
+    parser.add_argument(
+        "--field-entry-height",
+        default="entry_height_ft",
+        help="dcTrack JSON field containing cable entry height in feet.",
+    )
     parser.add_argument("--route-height-ft", type=float, default=10.0, help="Overhead route height in feet.")
     parser.add_argument(
         "--routing-mode",
@@ -260,7 +406,25 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        cabinets = load_cabinet_locations(args.cabinet_file)
+        if args.cabinet_file:
+            cabinets = load_cabinet_locations(args.cabinet_file)
+        else:
+            token = args.dctrack_api_token
+            if not token:
+                token = os.environ.get(args.dctrack_token_env)
+            cabinets = load_cabinet_locations_from_dctrack_api(
+                args.dctrack_api_url,
+                token=token,
+                timeout_sec=args.dctrack_timeout_sec,
+                auth_header=args.dctrack_auth_header,
+                auth_prefix=args.dctrack_auth_prefix,
+                data_path=args.dctrack_data_path,
+                field_cabinet_id=args.field_cabinet_id,
+                field_x=args.field_x,
+                field_y=args.field_y,
+                field_elevation=args.field_elevation,
+                field_entry_height=args.field_entry_height,
+            )
         estimate = calculate_fiber_run(
             cabinets,
             args.from_cabinet,
