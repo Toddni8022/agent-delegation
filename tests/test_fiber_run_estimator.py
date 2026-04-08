@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from agent_delegation.tools.fiber_run_estimator import (
+from agent_delegation.fiber.fiber_run_estimator import (
     CabinetLocation,
     calculate_fiber_run,
     load_cabinet_locations_from_dctrack_api,
@@ -149,7 +149,7 @@ def test_load_cabinet_locations_from_dctrack_api(monkeypatch):
         return _DummyResponse()
 
     monkeypatch.setattr(
-        "agent_delegation.tools.fiber_run_estimator.urllib_request.urlopen",
+        "agent_delegation.fiber.fiber_run_estimator.urllib_request.urlopen",
         _fake_urlopen,
     )
 

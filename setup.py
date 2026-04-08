@@ -38,7 +38,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "fiber-run-estimator=agent_delegation.tools.fiber_run_estimator:main",
+            "fiber-run-estimator=agent_delegation.fiber.fiber_run_estimator:main",
         ],
     },
 )

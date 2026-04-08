@@ -1,4 +1,4 @@
-"""Backward-compatible exports for tooling modules."""
+"""Fiber estimation package for data center routing workflows."""
 
 from __future__ import annotations
 
@@ -8,15 +8,15 @@ __all__ = (
     "CabinetLocation",
     "FiberRunEstimate",
     "calculate_fiber_run",
-    "load_cabinet_locations_from_dctrack_api",
     "load_cabinet_locations",
+    "load_cabinet_locations_from_dctrack_api",
 )
 
 
 def __getattr__(name: str) -> Any:
-    """Lazy-load symbols from moved fiber module."""
+    """Lazy-load estimator symbols to avoid module execution warnings."""
     if name in __all__:
-        from agent_delegation.fiber import fiber_run_estimator
+        from . import fiber_run_estimator
 
         return getattr(fiber_run_estimator, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

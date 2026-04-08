@@ -411,7 +411,7 @@ See the `examples/` directory for complete working examples:
 
 - `basic_usage.py` - Basic task delegation
 - More examples demonstrating callbacks, multiple agents, priority queue, etc.
-- `cabinet_locations_sample.csv` - Sample cabinet coordinates for fiber run estimates
+- `agent_delegation/fiber/cabinet_locations_sample.csv` - Sample cabinet coordinates for fiber run estimates
 
 Run examples:
 
@@ -420,7 +420,7 @@ python examples/basic_usage.py
 
 # Fiber run estimate (cabinet-to-cabinet)
 fiber-run-estimator \
-  --cabinet-file examples/cabinet_locations_sample.csv \
+  --cabinet-file agent_delegation/fiber/cabinet_locations_sample.csv \
   --from-cabinet A-14 \
   --to-cabinet B-22 \
   --route-height-ft 10 \
