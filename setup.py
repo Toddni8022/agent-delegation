@@ -36,4 +36,9 @@ setup(
             "mypy>=1.0",
         ],
     },
+    entry_points={
+        "console_scripts": [
+            "fiber-run-estimator=agent_delegation.tools.fiber_run_estimator:main",
+        ],
+    },
 )
