@@ -1,6 +1,6 @@
 # Agent Delegation System
 
-A production-ready Python task delegation system for managing custom agents, task queues, and async execution with comprehensive observability.
+A portfolio-grade Python task delegation system for managing custom agents, priority queues, and asynchronous execution with observable task state.
 
 ## Features
 
@@ -12,6 +12,12 @@ A production-ready Python task delegation system for managing custom agents, tas
 - **Error Handling & Retries**: Automatic retry logic with configurable retry counts and timeouts
 - **Webhooks & Callbacks**: Register callbacks for task completion events
 - **Comprehensive Logging**: Full observability with structured logging and metrics
+
+## Scope and Limitations
+
+This repository demonstrates orchestration mechanics inside one Python process. It is intentionally not described as a distributed production queue: task state is memory-resident, workers do not coordinate across hosts, and the package does not provide durable delivery, authentication, tenancy boundaries, or a control-plane API. Those would be the next architectural layer for a Celery, Temporal, or cloud-queue deployment.
+
+The examples use deterministic local agents so the complete test suite runs without API keys or external services.
 
 ## Architecture
 
