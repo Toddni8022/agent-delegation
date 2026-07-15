@@ -417,11 +417,33 @@ See the `examples/` directory for complete working examples:
 
 - `basic_usage.py` - Basic task delegation
 - More examples demonstrating callbacks, multiple agents, priority queue, etc.
+- `agent_delegation/fiber/cabinet_locations_sample.csv` - Sample cabinet coordinates for fiber run estimates
 
 Run examples:
 
 ```bash
 python examples/basic_usage.py
+
+# Fiber run estimate (cabinet-to-cabinet)
+fiber-run-estimator \
+  --cabinet-file agent_delegation/fiber/cabinet_locations_sample.csv \
+  --from-cabinet A-14 \
+  --to-cabinet B-22 \
+  --route-height-ft 10 \
+  --turns 3
+
+# Fiber run estimate using dcTrack API JSON
+fiber-run-estimator \
+  --dctrack-api-url https://dctrack.example.com/api/cabinets \
+  --from-cabinet A-14 \
+  --to-cabinet B-22 \
+  --dctrack-token-env DCTRACK_API_TOKEN \
+  --dctrack-data-path data.items \
+  --field-cabinet-id name \
+  --field-x x \
+  --field-y y \
+  --field-elevation z \
+  --field-entry-height entry
 ```
 
 ## Architecture Details
