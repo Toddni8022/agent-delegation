@@ -27,6 +27,7 @@ setup(
     python_requires=">=3.10",
     install_requires=[
         "aiohttp>=3.8.0",
+        "pypdf",
     ],
     extras_require={
         "dev": [

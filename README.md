@@ -375,6 +375,38 @@ task = Task(
 )
 ```
 
+### TrumpSpeechFactCheckAgent
+
+Built-in agent for local next-word prediction and rule-based fact-check flags:
+
+```python
+from agent_delegation import Task
+from agent_delegation.agents import TrumpSpeechFactCheckAgent
+
+agent = TrumpSpeechFactCheckAgent()
+
+# Train on transcript text
+train_task = Task(
+    task_type="trump_speech_prediction",
+    params={"operation": "train", "transcripts": ["We will win and keep winning."]}
+)
+await agent.execute(train_task)
+
+# Predict likely next words
+predict_task = Task(
+    task_type="trump_speech_prediction",
+    params={"operation": "predict_next_words", "prompt": "we will", "top_k": 5}
+)
+prediction = await agent.execute(predict_task)
+
+# Flag claim-like statements for fact-checking
+check_task = Task(
+    task_type="trump_fact_check",
+    params={"operation": "fact_check", "text": "The largest inauguration crowd was mine."}
+)
+checks = await agent.execute(check_task)
+```
+
 ## Configuration
 
 ### CoordinatorConfig
@@ -417,11 +449,38 @@ See the `examples/` directory for complete working examples:
 
 - `basic_usage.py` - Basic task delegation
 - More examples demonstrating callbacks, multiple agents, priority queue, etc.
+- `trump_fact_checker.py` - Interactive next-word prediction + fact-check flags
+- `fact_check_transcript.py` - One-command transcript fact-check report (.txt or .pdf)
+- `fact_check_gui.py` - Desktop GUI (browse transcript .txt/.pdf, analyze, save report)
+- `build_gui_exe.py` - Build a Windows .exe for the GUI with PyInstaller
 
 Run examples:
 
 ```bash
 python examples/basic_usage.py
+python examples/trump_fact_checker.py
+python examples/fact_check_transcript.py --transcript examples/data/trump_sample_transcript.txt
+python examples/fact_check_gui.py
+python examples/build_gui_exe.py
+```
+
+### Build Windows .exe for GUI
+
+```bash
+# Install builder dependency once
+python -m pip install pyinstaller
+python -m pip install pypdf
+
+# Build dist/TrumpFactCheckerGUI.exe
+python examples/build_gui_exe.py
+```
+
+Optional flags:
+
+```bash
+python examples/build_gui_exe.py --name MyFactChecker
+python examples/build_gui_exe.py --name MyFactChecker --icon path/to/icon.ico
+python examples/build_gui_exe.py --no-onefile
 ```
 
 ## Architecture Details
